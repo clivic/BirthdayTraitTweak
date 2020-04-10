@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2048
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BirthdayTraitTweak", "BirthdayTraitTweak\BirthdayTraitTweak.csproj", "{1B611ED5-5D8B-4E07-9B9A-9ECF6A0016DE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1B611ED5-5D8B-4E07-9B9A-9ECF6A0016DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B611ED5-5D8B-4E07-9B9A-9ECF6A0016DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B611ED5-5D8B-4E07-9B9A-9ECF6A0016DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B611ED5-5D8B-4E07-9B9A-9ECF6A0016DE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1EE15028-2815-49C7-8B59-1B419FFB1BDE}
+	EndGlobalSection
+EndGlobal

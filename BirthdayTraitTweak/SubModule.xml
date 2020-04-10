@@ -1,0 +1,35 @@
+﻿<Module>
+  <Name value="Birthday &amp; Trait Tweaks"/>
+  <Id value="BirthdayTraitTweak"/>
+  <Version value="v1.1.0"/>
+  <SingleplayerModule value="true"/>
+  <MultiplayerModule value="false"/>
+  <DependedModules>
+    <DependedModule Id="Native" />
+    <DependedModule Id="SandBoxCore" />
+    <DependedModule Id="Sandbox" />
+    <DependedModule Id="StoryMode" />
+  </DependedModules>
+  <SubModules>
+    <SubModule>
+      <Name value="BirthdayTraitTweak"/>
+      <DLLName value="BirthdayTraitTweak.dll"/>
+      <SubModuleClassType value="BirthdayTraitTweak.SubModule"/>
+      <Tags>
+        <Tag key="DedicatedServerType" value="none" />
+        <Tag key="IsNoRenderModeElement" value="false" />
+      </Tags>
+    </SubModule>
+  </SubModules>
+  <Xmls>
+    <XmlNode>
+      <XmlName type="1" id="Items" path="customitems"/>
+    </XmlNode>
+    <XmlNode>
+      <XmlName type="1" id="SPCultures" path="customcultures"/>
+    </XmlNode>
+    <XmlNode>
+      <XmlName type="1" id="NPCCharacters" path="customcharacters"/>
+    </XmlNode>
+  </Xmls>
+</Module>
