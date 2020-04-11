@@ -28,7 +28,6 @@ namespace BirthdayTraitTweak
     public class SubModule : MBSubModuleBase
     {
         private Hero currChar = null;
-        private bool disabled = true;
 
         protected override void OnGameStart(Game game, IGameStarter gameStarterObject)
         {
@@ -37,20 +36,15 @@ namespace BirthdayTraitTweak
             // Logs
             Helper.ClearLog();
             Helper.ShowAndLog($"Initialized {Config.MOD_NAME} mod.");
-            if (!(game.GameType is Campaign)) { Helper.Log("Game mode is not campaign."); disabled = true; return; }
+            if (!(game.GameType is Campaign)) { Helper.Log("Game mode is not campaign."); return; }
             Helper.Log("Game mode is campaign.");
 
             // Current hero is by default the playerChar.
             currChar = this.PlayerChar;
-            if (currChar == null)
-            {
-                Helper.Log($"Unable to get the player's character. Current Character is null.");
-                disabled = true;
-                return;
-            }
+            Helper.Log(currChar == null
+                ? $"Unable to get the player's character. Current Character is null."
+                : $"Current Character: {currChar.Name}, age: {currChar.Age}");
 
-            Helper.Log($"Current Character: {currChar.Name}, age: {currChar.Age}");
-            disabled = false;
             base.OnGameStart(game, gameStarterObject);
 
             // Bind events
@@ -73,20 +67,29 @@ namespace BirthdayTraitTweak
 
         private string CurrentCharacterLogString => $"Current Character is {currChar?.Name.ToString() ?? "null"}";
 
+        private bool TryToSelectPlayerCharIfNull()
+        {
+            if (currChar == null)
+            {
+                currChar = PlayerChar;
+            }
+
+            return currChar != null;
+        }
+
         protected override void OnApplicationTick(float dt)
         {
-            if (disabled) return;
-
             base.OnApplicationTick(dt);
 
             if (!InputKey.LeftControl.IsDown() && !InputKey.RightControl.IsDown()) return;
             if (!InputKey.B.IsDown()) return;
             if (Campaign.Current == null) return;
             if (!Campaign.Current.GameStarted) return;
-            if (currChar == null) return;
 
             if (InputKey.S.IsReleased())
             {
+                if (!TryToSelectPlayerCharIfNull()) return;
+
                 // Refresh the config.
                 Helper.ReadConfig();
                 if (Config.Mode == Config.RWMode.Single)
@@ -102,6 +105,8 @@ namespace BirthdayTraitTweak
 
             if (InputKey.L.IsReleased())
             {
+                if (!TryToSelectPlayerCharIfNull()) return;
+
                 // Refresh the config.
                 Helper.ReadConfig();
                 if (Config.Mode == Config.RWMode.Single)
@@ -117,6 +122,8 @@ namespace BirthdayTraitTweak
 
             if (InputKey.T.IsReleased())
             {
+                if (!TryToSelectPlayerCharIfNull()) return;
+               
                 // Refresh the config.
                 Helper.ReadConfig();
                 // Toggle the Read Write mode
