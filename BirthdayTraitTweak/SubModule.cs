@@ -328,6 +328,10 @@ namespace BirthdayTraitTweak
 
                 var newBirthDay = Helper.CreateCampaignTime(newTicks);
                 character.BirthDay = newBirthDay;
+                // Update character model
+                var dps = character.DynamicBodyProperties;
+                dps.Age = character.Age;
+                character.DynamicBodyProperties = dps;
 
                 readBirthdaySuccess = true;
             }
