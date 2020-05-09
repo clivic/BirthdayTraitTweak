@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.PerformanceData;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -109,13 +110,17 @@ namespace BirthdayTraitTweak
 
                 // Refresh the config.
                 Helper.ReadConfig();
+
+                // Update appearance?
+                bool updateAppearance = InputKey.LeftShift.IsDown() || InputKey.RightShift.IsDown();
+                Helper.ShowAndLog($"updateAppearance: {updateAppearance}");
                 if (Config.Mode == Config.RWMode.Single)
                 {
-                    Import(currChar);
+                    Import(currChar, updateAppearance);
                 }
                 else if (Config.Mode == Config.RWMode.Family)
                 {
-                    ImportWholeFamily(currChar);
+                    ImportWholeFamily(currChar, updateAppearance);
                 }
                 else Helper.ShowMsg($"Invalid mode \"{Config.ModeStr}\". Please check {Helper.ConfigPath}");
             }
@@ -123,7 +128,7 @@ namespace BirthdayTraitTweak
             if (InputKey.T.IsReleased())
             {
                 if (!TryToSelectPlayerCharIfNull()) return;
-               
+
                 // Refresh the config.
                 Helper.ReadConfig();
                 // Toggle the Read Write mode
@@ -210,7 +215,7 @@ namespace BirthdayTraitTweak
             sb.AppendLine("//If you want to modify RemainingTicks, remember there are 10000 ticks per game second.");
             sb.AppendLine("//Traits range from -2 to 2.");
             sb.AppendLine(Environment.NewLine);
-            sb.AppendLine("//Main character birthday:");
+            sb.AppendLine($"//{character.Name}'s birthday:");
             sb.AppendLine($"Year={character.BirthDay.GetYear}");
             sb.AppendLine($"Season={character.BirthDay.GetSeasonOfYear}");
             sb.AppendLine($"Day={character.BirthDay.GetDayOfSeason}");
@@ -223,8 +228,12 @@ namespace BirthdayTraitTweak
             sb.AppendLine($"RemainingTicks={(character.BirthDay - b).GetTicks()}");
             sb.AppendLine(Environment.NewLine);
 
+            // Is this character the player?
+            bool isPlayer = Helper.CharacterHasTraitDeveloper(character);
+
             // Traits
-            sb.AppendLine("//Main character traits:");
+            string traitPromptStr = isPlayer ? " (Read only. Modify Trait XP to change traits)" : string.Empty;
+            sb.AppendLine($"//Traits{traitPromptStr}:");
             var traits = character.GetHeroTraits();
             sb.AppendLine($"Mercy={traits.Mercy}");
             sb.AppendLine($"Valor={traits.Valor}");
@@ -232,10 +241,27 @@ namespace BirthdayTraitTweak
             sb.AppendLine($"Generosity={traits.Generosity}");
             sb.AppendLine($"Calculating={traits.Calculating}");
             sb.AppendLine(Environment.NewLine);
-            ;
+
+            // Trait XP
+            if (isPlayer)
+            {
+                sb.AppendLine("//Trait XP:");
+                sb.AppendLine($"MercyXP={Campaign.Current.PlayerTraitDeveloper.GetPropertyValue(DefaultTraits.Mercy)}");
+                sb.AppendLine($"ValorXP={Campaign.Current.PlayerTraitDeveloper.GetPropertyValue(DefaultTraits.Valor)}");
+                sb.AppendLine($"HonorXP={Campaign.Current.PlayerTraitDeveloper.GetPropertyValue(DefaultTraits.Honor)}");
+                sb.AppendLine($"GenerosityXP={Campaign.Current.PlayerTraitDeveloper.GetPropertyValue(DefaultTraits.Generosity)}");
+                sb.AppendLine($"CalculatingXP={Campaign.Current.PlayerTraitDeveloper.GetPropertyValue(DefaultTraits.Calculating)}");
+                sb.AppendLine(Environment.NewLine);
+            }
+
             // Output.
             sb.AppendLine("//Don't modify this field as it will not be read.");
             sb.AppendLine($"FormattedBirthday={character.BirthDay.ToString()}");
+            for (int i = DefaultTraits.Mercy.MinValue; i <= DefaultTraits.Mercy.MaxValue; ++i) sb.AppendLine($"MercyXPRequired{i}={Campaign.Current.Models.CharacterDevelopmentModel.GetTraitXpRequiredForTraitLevel(DefaultTraits.Mercy, i)}");
+            for (int i = DefaultTraits.Valor.MinValue; i <= DefaultTraits.Valor.MaxValue; ++i) sb.AppendLine($"ValorXPRequired{i}={Campaign.Current.Models.CharacterDevelopmentModel.GetTraitXpRequiredForTraitLevel(DefaultTraits.Valor, i)}");
+            for (int i = DefaultTraits.Honor.MinValue; i <= DefaultTraits.Honor.MaxValue; ++i) sb.AppendLine($"HonorXPRequired{i}={Campaign.Current.Models.CharacterDevelopmentModel.GetTraitXpRequiredForTraitLevel(DefaultTraits.Honor, i)}");
+            for (int i = DefaultTraits.Generosity.MinValue; i <= DefaultTraits.Generosity.MaxValue; ++i) sb.AppendLine($"GenerosityXPRequired{i}={Campaign.Current.Models.CharacterDevelopmentModel.GetTraitXpRequiredForTraitLevel(DefaultTraits.Generosity, i)}");
+            for (int i = DefaultTraits.Calculating.MinValue; i <= DefaultTraits.Calculating.MaxValue; ++i) sb.AppendLine($"CalculatingXPRequired{i}={Campaign.Current.Models.CharacterDevelopmentModel.GetTraitXpRequiredForTraitLevel(DefaultTraits.Calculating, i)}");
             File.WriteAllText(this.GetSaveName(character), sb.ToString());
 
             Helper.ShowAndLog($"Exported {character.Name}'s birthday and traits.");
@@ -249,9 +275,10 @@ namespace BirthdayTraitTweak
             }
         }
 
-        public void Import(Hero character)
+        public void Import(Hero character, bool updateAppearance)
         {
             string filename = GetSaveName(character);
+            bool isPlayer = Helper.CharacterHasTraitDeveloper(character);
             int? year = null, season = null, day = null, hour = null;
             long? remaining = null;
             int? mercy = null, valor = null, honor = null, generosity = null, calculating = null;
@@ -286,25 +313,53 @@ namespace BirthdayTraitTweak
                     }
 
                     // Traits
-                    else if (key.Equals("Mercy"))
+                    // if the character is the player (who has a trait developer), read the XP
+                    else if (isPlayer)
                     {
-                        mercy = Convert.ToInt32(value);
+                        if (key.Equals("MercyXP"))
+                        {
+                            mercy = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("ValorXP"))
+                        {
+                            valor = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("HonorXP"))
+                        {
+                            honor = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("GenerosityXP"))
+                        {
+                            generosity = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("CalculatingXP"))
+                        {
+                            calculating = Convert.ToInt32(value);
+                        }
                     }
-                    else if (key.Equals("Valor"))
+                    else
                     {
-                        valor = Convert.ToInt32(value);
-                    }
-                    else if (key.Equals("Honor"))
-                    {
-                        honor = Convert.ToInt32(value);
-                    }
-                    else if (key.Equals("Generosity"))
-                    {
-                        generosity = Convert.ToInt32(value);
-                    }
-                    else if (key.Equals("Calculating"))
-                    {
-                        calculating = Convert.ToInt32(value);
+                        // The character doesn't not have a trait developer (non-player). Directly read the traits. 
+                        if (key.Equals("Mercy"))
+                        {
+                            mercy = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("Valor"))
+                        {
+                            valor = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("Honor"))
+                        {
+                            honor = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("Generosity"))
+                        {
+                            generosity = Convert.ToInt32(value);
+                        }
+                        else if (key.Equals("Calculating"))
+                        {
+                            calculating = Convert.ToInt32(value);
+                        }
                     }
                 }
                 catch { Helper.ShowAndLog($"Failed to parse {key} for {character}"); return; }
@@ -329,9 +384,12 @@ namespace BirthdayTraitTweak
                 var newBirthDay = Helper.CreateCampaignTime(newTicks);
                 character.BirthDay = newBirthDay;
                 // Update character model
-                var dps = character.DynamicBodyProperties;
-                dps.Age = character.Age;
-                character.DynamicBodyProperties = dps;
+                if (updateAppearance)
+                {
+                    var dps = character.DynamicBodyProperties;
+                    dps.Age = character.Age;
+                    character.DynamicBodyProperties = dps;
+                }
 
                 readBirthdaySuccess = true;
             }
@@ -343,13 +401,31 @@ namespace BirthdayTraitTweak
                 generosity.HasValue &&
                 calculating.HasValue)
             {
-                // It will clamp to min max value in SetTraitLevel()
-                character.SetTraitLevel(DefaultTraits.Mercy, mercy.Value);
-                character.SetTraitLevel(DefaultTraits.Valor, valor.Value);
-                character.SetTraitLevel(DefaultTraits.Honor, honor.Value);
-                character.SetTraitLevel(DefaultTraits.Generosity, generosity.Value);
-                character.SetTraitLevel(DefaultTraits.Calculating, calculating.Value);
+                if (isPlayer)
+                {
+                    var ptd = Campaign.Current.PlayerTraitDeveloper;
+                    var deltaMercy = mercy.Value - ptd.GetPropertyValue(DefaultTraits.Mercy);
+                    var deltaValor = valor.Value - ptd.GetPropertyValue(DefaultTraits.Valor);
+                    var deltaHonor = honor.Value - ptd.GetPropertyValue(DefaultTraits.Honor);
+                    var deltaGenerosity = generosity.Value - ptd.GetPropertyValue(DefaultTraits.Generosity);
+                    var deltaCalculating = calculating.Value - ptd.GetPropertyValue(DefaultTraits.Calculating);
 
+                    if (deltaMercy != 0) ptd.AddTraitXp(DefaultTraits.Mercy, deltaMercy);
+                    if (deltaValor != 0) ptd.AddTraitXp(DefaultTraits.Valor, deltaValor);
+                    if (deltaHonor != 0) ptd.AddTraitXp(DefaultTraits.Honor, deltaHonor);
+                    if (deltaGenerosity != 0) ptd.AddTraitXp(DefaultTraits.Generosity, deltaGenerosity);
+                    if (deltaCalculating != 0) ptd.AddTraitXp(DefaultTraits.Calculating, deltaCalculating);
+                }
+                else
+                {
+                    // It will clamp to min max value in SetTraitLevel()
+                    character.SetTraitLevel(DefaultTraits.Mercy, mercy.Value);
+                    character.SetTraitLevel(DefaultTraits.Valor, valor.Value);
+                    character.SetTraitLevel(DefaultTraits.Honor, honor.Value);
+                    character.SetTraitLevel(DefaultTraits.Generosity, generosity.Value);
+                    character.SetTraitLevel(DefaultTraits.Calculating, calculating.Value);
+                }
+                
                 readTraitsSuccess = false;
             }
 
@@ -358,14 +434,14 @@ namespace BirthdayTraitTweak
             else if (readBirthdaySuccess) msg += "birthday.";
             else if (readTraitsSuccess) msg += "traits.";
             else msg = null;
-            if (msg != null) Helper.ShowAndLog(msg);
+            if (msg != null) Helper.ShowAndLog(msg + $" Appearance {(updateAppearance?string.Empty:"not")} updated");
         }
 
-        public void ImportWholeFamily(Hero character)
+        public void ImportWholeFamily(Hero character, bool updateAppearance)
         {
             foreach (var familyMember in GetFamily(character))
             {
-                Import(familyMember);
+                Import(familyMember, updateAppearance);
             }
         }
     }

@@ -157,6 +157,14 @@ namespace BirthdayTraitTweak
             var dataSrc = (EncyclopediaPageVM)dataSrcInfo.GetValue(data);
             return dataSrc;
         }
+
+        public static bool CharacterHasTraitDeveloper(Hero character)
+        {
+            var heroInfo = typeof(HeroTraitDeveloper).GetProperty("Hero", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (heroInfo == null) return false;
+            Hero traitDeveloperHero = (Hero)heroInfo.GetValue(Campaign.Current.PlayerTraitDeveloper);
+            return traitDeveloperHero == character;
+        }
     }
 
     public static class CampaignTimeExtension
