@@ -16,13 +16,15 @@ using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.TwoDimension;
 using Module = TaleWorlds.MountAndBlade.Module;
-
+using TaleWorlds.CampaignSystem.SandBox.CampaignBehaviors;
 using SandBox.GauntletUI;
 using SandBox.View.Map;
 using TaleWorlds.CampaignSystem.ViewModelCollection.Encyclopedia;
 using TaleWorlds.Engine.GauntletUI;
 using TaleWorlds.Engine.Screens;
 using TaleWorlds.GauntletUI.Data;
+using TaleWorlds.SaveSystem;
+using HarmonyLib;
 
 namespace BirthdayTraitTweak
 {
@@ -45,6 +47,10 @@ namespace BirthdayTraitTweak
             Helper.Log(currChar == null
                 ? $"Unable to get the player's character. Current Character is null."
                 : $"Current Character: {currChar.Name}, age: {currChar.Age}");
+
+            // Inject Harmony
+            var harmony = new Harmony("com.clivic.birthday_trait_tweak");
+            harmony.PatchAll();
 
             base.OnGameStart(game, gameStarterObject);
 
@@ -141,6 +147,54 @@ namespace BirthdayTraitTweak
                 Helper.WriteConfig(Config.ModeStr);
                 string str = Config.Mode == Config.RWMode.Family ? "and family." : "only.";
                 Helper.ShowAndLog($"Mode: Import/Export Current Character {currChar} {str}");
+            }
+
+            if (InputKey.C.IsReleased())
+            {
+                // Child
+                Helper.ShowAndLog($"DeliveringFemaleOffspringProbability: {Campaign.Current.Models.PregnancyModel.DeliveringFemaleOffspringProbability}");
+                Helper.ShowAndLog($"DeliveringTwinsProbability: {Campaign.Current.Models.PregnancyModel.DeliveringTwinsProbability}");
+                Helper.ShowAndLog($"PregnancyDurationInDays: {Campaign.Current.Models.PregnancyModel.PregnancyDurationInDays}");
+                //Helper.ShowAndLog($"MaternalMortalityProbabilityInLabor: {Campaign.Current.Models.PregnancyModel.MaternalMortalityProbabilityInLabor}");
+                //Helper.ShowAndLog($"StillbirthProbability: {Campaign.Current.Models.PregnancyModel.StillbirthProbability}");
+                Helper.ShowAndLog($"PlayerChar.IsPregnant: {PlayerChar.IsPregnant}");
+                //Helper.ShowAndLog($"PlayerChar.IsFertile: {PlayerChar.IsFertile}");
+                Helper.ShowAndLog($"Chance of pregnancy: {Campaign.Current.Models.PregnancyModel.GetDailyChanceOfPregnancyForHero(PlayerChar)}");
+                //var pregnancyBehavior = Campaign.Current.GetCampaignBehavior<PregnancyCampaignBehavior>();
+                //Type Pregnancy = typeof(PregnancyCampaignBehavior).GetNestedType("Pregnancy", BindingFlags.Instance | BindingFlags.NonPublic);
+                //var fieldInfo = typeof(PregnancyCampaignBehavior).GetField("_heroPregnancies", BindingFlags.Instance | BindingFlags.NonPublic);
+                //var list = (List< PregnancyCampaignBehavior.Pregnancy >)fieldInfo.GetValue(pregnancyBehavior);
+                //foreach (var item in list)
+                //{
+                //    Helper.ShowAndLog($"Due date: {item.DueDate.ToString()}");
+                //}
+                Settlement settlement; MobileParty mobileParty; Settlement settlement2; MobileParty mobileParty2;
+                Helper.ShowAndLog($"Spouse {PlayerChar.Spouse.Name} nearby: {CheckAreNearby(PlayerChar, PlayerChar.Spouse, out settlement, out mobileParty, out settlement2, out mobileParty2)}, ");
+                Helper.ShowAndLog($"Hero Settlement: {(settlement != null ? settlement.Name.ToString() : "Null")}, Hero Party: {(mobileParty != null ? mobileParty.Name.ToString() : "Null")}");
+                Helper.ShowAndLog($"Spouse Settlement: {(settlement2 != null ? settlement2.Name.ToString() : "Null")}, Spouse Party: {(mobileParty2 != null ? mobileParty2.Name.ToString() : "Null")}");
+            }
+        }
+
+        private bool CheckAreNearby(Hero hero, Hero spouse, out Settlement settlement, out MobileParty mobileParty, out Settlement settlement2, out MobileParty mobileParty2)
+        {
+            this.GetLocation(hero, out settlement, out mobileParty);
+            this.GetLocation(spouse, out settlement2, out mobileParty2);
+            return (settlement != null && settlement == settlement2) || (hero.Clan != Hero.MainHero.Clan && MBRandom.RandomFloat < 0.2f);
+        }
+
+        private void GetLocation(Hero hero, out Settlement heroSettlement, out MobileParty heroParty)
+        {
+            heroSettlement = hero.CurrentSettlement;
+            heroParty = hero.PartyBelongedTo;
+            MobileParty mobileParty = heroParty;
+            if (((mobileParty != null) ? mobileParty.AttachedTo : null) != null)
+            {
+                heroParty = heroParty.AttachedTo;
+            }
+            if (heroSettlement == null)
+            {
+                MobileParty mobileParty2 = heroParty;
+                heroSettlement = ((mobileParty2 != null) ? mobileParty2.CurrentSettlement : null);
             }
         }
 
