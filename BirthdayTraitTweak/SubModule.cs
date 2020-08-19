@@ -49,8 +49,8 @@ namespace BirthdayTraitTweak
                 : $"Current Character: {currChar.Name}, age: {currChar.Age}");
 
             // Inject Harmony
-            var harmony = new Harmony("com.clivic.birthday_trait_tweak");
-            harmony.PatchAll();
+            //var harmony = new Harmony("com.clivic.birthday_trait_tweak");
+            //harmony.PatchAll();
 
             base.OnGameStart(game, gameStarterObject);
 
@@ -119,7 +119,7 @@ namespace BirthdayTraitTweak
 
                 // Update appearance?
                 bool updateAppearance = InputKey.LeftShift.IsDown() || InputKey.RightShift.IsDown();
-                Helper.ShowAndLog($"updateAppearance: {updateAppearance}");
+                //Helper.ShowAndLog($"updateAppearance: {updateAppearance}");
                 if (Config.Mode == Config.RWMode.Single)
                 {
                     Import(currChar, updateAppearance);
@@ -149,53 +149,11 @@ namespace BirthdayTraitTweak
                 Helper.ShowAndLog($"Mode: Import/Export Current Character {currChar} {str}");
             }
 
-            if (InputKey.C.IsReleased())
-            {
-                // Child
-                Helper.ShowAndLog($"DeliveringFemaleOffspringProbability: {Campaign.Current.Models.PregnancyModel.DeliveringFemaleOffspringProbability}");
-                Helper.ShowAndLog($"DeliveringTwinsProbability: {Campaign.Current.Models.PregnancyModel.DeliveringTwinsProbability}");
-                Helper.ShowAndLog($"PregnancyDurationInDays: {Campaign.Current.Models.PregnancyModel.PregnancyDurationInDays}");
-                //Helper.ShowAndLog($"MaternalMortalityProbabilityInLabor: {Campaign.Current.Models.PregnancyModel.MaternalMortalityProbabilityInLabor}");
-                //Helper.ShowAndLog($"StillbirthProbability: {Campaign.Current.Models.PregnancyModel.StillbirthProbability}");
-                Helper.ShowAndLog($"PlayerChar.IsPregnant: {PlayerChar.IsPregnant}");
-                //Helper.ShowAndLog($"PlayerChar.IsFertile: {PlayerChar.IsFertile}");
-                Helper.ShowAndLog($"Chance of pregnancy: {Campaign.Current.Models.PregnancyModel.GetDailyChanceOfPregnancyForHero(PlayerChar)}");
-                //var pregnancyBehavior = Campaign.Current.GetCampaignBehavior<PregnancyCampaignBehavior>();
-                //Type Pregnancy = typeof(PregnancyCampaignBehavior).GetNestedType("Pregnancy", BindingFlags.Instance | BindingFlags.NonPublic);
-                //var fieldInfo = typeof(PregnancyCampaignBehavior).GetField("_heroPregnancies", BindingFlags.Instance | BindingFlags.NonPublic);
-                //var list = (List< PregnancyCampaignBehavior.Pregnancy >)fieldInfo.GetValue(pregnancyBehavior);
-                //foreach (var item in list)
-                //{
-                //    Helper.ShowAndLog($"Due date: {item.DueDate.ToString()}");
-                //}
-                Settlement settlement; MobileParty mobileParty; Settlement settlement2; MobileParty mobileParty2;
-                Helper.ShowAndLog($"Spouse {PlayerChar.Spouse.Name} nearby: {CheckAreNearby(PlayerChar, PlayerChar.Spouse, out settlement, out mobileParty, out settlement2, out mobileParty2)}, ");
-                Helper.ShowAndLog($"Hero Settlement: {(settlement != null ? settlement.Name.ToString() : "Null")}, Hero Party: {(mobileParty != null ? mobileParty.Name.ToString() : "Null")}");
-                Helper.ShowAndLog($"Spouse Settlement: {(settlement2 != null ? settlement2.Name.ToString() : "Null")}, Spouse Party: {(mobileParty2 != null ? mobileParty2.Name.ToString() : "Null")}");
-            }
-        }
-
-        private bool CheckAreNearby(Hero hero, Hero spouse, out Settlement settlement, out MobileParty mobileParty, out Settlement settlement2, out MobileParty mobileParty2)
-        {
-            this.GetLocation(hero, out settlement, out mobileParty);
-            this.GetLocation(spouse, out settlement2, out mobileParty2);
-            return (settlement != null && settlement == settlement2) || (hero.Clan != Hero.MainHero.Clan && MBRandom.RandomFloat < 0.2f);
-        }
-
-        private void GetLocation(Hero hero, out Settlement heroSettlement, out MobileParty heroParty)
-        {
-            heroSettlement = hero.CurrentSettlement;
-            heroParty = hero.PartyBelongedTo;
-            MobileParty mobileParty = heroParty;
-            if (((mobileParty != null) ? mobileParty.AttachedTo : null) != null)
-            {
-                heroParty = heroParty.AttachedTo;
-            }
-            if (heroSettlement == null)
-            {
-                MobileParty mobileParty2 = heroParty;
-                heroSettlement = ((mobileParty2 != null) ? mobileParty2.CurrentSettlement : null);
-            }
+            //if (InputKey.U.IsReleased())
+            //{
+            //    Helper.ShowAndLog($"Player culture: {PlayerChar.Culture.GetName()}");
+            //    Helper.ShowAndLog($"Player clan culture: {PlayerChar.Clan.Culture.GetName()}");
+            //}
         }
 
         public Hero PlayerChar
@@ -282,6 +240,11 @@ namespace BirthdayTraitTweak
             sb.AppendLine($"RemainingTicks={(character.BirthDay - b).GetTicks()}");
             sb.AppendLine(Environment.NewLine);
 
+            // Culture
+            sb.AppendLine("//Culture:");
+            sb.AppendLine($"Culture={character.Culture.GetName()}");
+            sb.AppendLine(Environment.NewLine);
+
             // Is this character the player?
             bool isPlayer = Helper.CharacterHasTraitDeveloper(character);
 
@@ -307,7 +270,7 @@ namespace BirthdayTraitTweak
                 sb.AppendLine($"CalculatingXP={Campaign.Current.PlayerTraitDeveloper.GetPropertyValue(DefaultTraits.Calculating)}");
                 sb.AppendLine(Environment.NewLine);
             }
-
+            
             // Output.
             sb.AppendLine("//Don't modify this field as it will not be read.");
             sb.AppendLine($"FormattedBirthday={character.BirthDay.ToString()}");
@@ -318,7 +281,7 @@ namespace BirthdayTraitTweak
             for (int i = DefaultTraits.Calculating.MinValue; i <= DefaultTraits.Calculating.MaxValue; ++i) sb.AppendLine($"CalculatingXPRequired{i}={Campaign.Current.Models.CharacterDevelopmentModel.GetTraitXpRequiredForTraitLevel(DefaultTraits.Calculating, i)}");
             File.WriteAllText(this.GetSaveName(character), sb.ToString());
 
-            Helper.ShowAndLog($"Exported {character.Name}'s birthday and traits.");
+            Helper.ShowAndLog($"Exported {character.Name}'s birthday, culture and traits.");
         }
 
         public void ExportWholeFamily(Hero character)
@@ -336,6 +299,7 @@ namespace BirthdayTraitTweak
             int? year = null, season = null, day = null, hour = null;
             long? remaining = null;
             int? mercy = null, valor = null, honor = null, generosity = null, calculating = null;
+            string culture = null;
             foreach (var keyValuePair in Helper.ReadFile(filename))
             {
                 var key = keyValuePair.Key;
@@ -364,6 +328,12 @@ namespace BirthdayTraitTweak
                     else if (key.Equals("RemainingTicks"))
                     {
                         remaining = Convert.ToInt64(value);
+                    }
+
+                    // Culture
+                    else if (key.Equals("Culture"))
+                    {
+                        culture = value;
                     }
 
                     // Traits
@@ -420,6 +390,7 @@ namespace BirthdayTraitTweak
             }
 
             bool readBirthdaySuccess = false;
+            bool readCultureSuccess = false;
             bool readTraitsSuccess = false;
             // Read Birthday
             if (year.HasValue &&
@@ -440,12 +411,51 @@ namespace BirthdayTraitTweak
                 // Update character model
                 if (updateAppearance)
                 {
-                    var dps = character.DynamicBodyProperties;
+                    var dps = character.BodyProperties.DynamicProperties;
                     dps.Age = character.Age;
-                    character.DynamicBodyProperties = dps;
+
+                    typeof(BodyProperties)
+                       .GetField("_dynamicBodyProperties", BindingFlags.Instance | BindingFlags.NonPublic)
+                       .SetValue(character.BodyProperties, dps);
                 }
 
                 readBirthdaySuccess = true;
+            }
+
+            // Read Culture
+            if (culture != null)
+            {
+                CultureCode c;
+                if (Enum.TryParse(culture, true, out c) == false)
+                {
+                    c = CultureCode.Invalid;
+                }
+
+                if (c != CultureCode.Invalid)
+                {
+                    var heroOfThisCulture = Hero.FindFirst((h) => h.Culture.GetCultureCode() == c);
+                    if (heroOfThisCulture != null)
+                    {
+                        character.CharacterObject.Culture = heroOfThisCulture.CharacterObject.Culture;
+                        if (character.Clan.Leader == character)
+                        {
+                            character.Clan.Culture = character.CharacterObject.Culture; // Clan culture changes too
+                        }
+                        readCultureSuccess = true;
+                    }
+                    else
+                    {
+                        //Helper.ShowAndLog($"{character.Name}'s culture not imported: Can't set to culture \"{c.ToString()}\"!");
+                    }
+                }
+                else
+                {
+                    //Helper.ShowAndLog($"{character.Name}'s culture not imported: Invalid culture \"{culture}\"!");
+                }
+            }
+            else
+            {
+                //Helper.ShowAndLog($"{character.Name}'s culture not imported: culture value is empty!");
             }
 
             // Read Traits
@@ -479,16 +489,20 @@ namespace BirthdayTraitTweak
                     character.SetTraitLevel(DefaultTraits.Generosity, generosity.Value);
                     character.SetTraitLevel(DefaultTraits.Calculating, calculating.Value);
                 }
-                
-                readTraitsSuccess = false;
+
+                readTraitsSuccess = true;
             }
 
             string msg = $"Imported {character.Name}'s ";
-            if (readBirthdaySuccess && readBirthdaySuccess) msg += "birthday and traits.";
-            else if (readBirthdaySuccess) msg += "birthday.";
-            else if (readTraitsSuccess) msg += "traits.";
+            if (readBirthdaySuccess && readCultureSuccess && readTraitsSuccess) msg += "birthday, culture and traits.";
+            else if (readBirthdaySuccess && readCultureSuccess && !readTraitsSuccess) msg += "birthday and culture.";
+            else if (readBirthdaySuccess && !readCultureSuccess && readTraitsSuccess) msg += "birthday and traits.";
+            else if (!readBirthdaySuccess && readCultureSuccess && readTraitsSuccess) msg += "culture and traits.";
+            else if (readBirthdaySuccess && !readCultureSuccess && !readTraitsSuccess) msg += "birthday.";
+            else if (!readBirthdaySuccess && readCultureSuccess && !readTraitsSuccess) msg += "culture.";
+            else if (!readBirthdaySuccess && !readCultureSuccess && readTraitsSuccess) msg += "traits.";
             else msg = null;
-            if (msg != null) Helper.ShowAndLog(msg + $" Appearance {(updateAppearance?string.Empty:"not")} updated");
+            if (msg != null) Helper.ShowAndLog(msg + $" Appearance {(updateAppearance ? string.Empty : "not")} updated.", new Color(0, 1, 0));
         }
 
         public void ImportWholeFamily(Hero character, bool updateAppearance)

@@ -47,9 +47,20 @@ namespace BirthdayTraitTweak
             InformationManager.DisplayMessage(new InformationMessage(text));
         }
 
+        public static void ShowMsg(string text, ref Color color)
+        {
+            InformationManager.DisplayMessage(new InformationMessage(text, color));
+        }
+
         public static void ShowAndLog(string text)
         {
             ShowMsg(text);
+            Log(text);
+        }
+
+        public static void ShowAndLog(string text, Color color)
+        {
+            ShowMsg(text, ref color);
             Log(text);
         }
 
